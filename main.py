@@ -19,7 +19,7 @@ def handle_line(line: str, lineno: int):
     elif cmd in ["-", "sleep"]: # waiting
         try: to_sleep = float(args)
         except ValueError:
-            logging.fatal(f"sleep: invalid duration {args!r}")
+            logging.fatal(f"ln {lineno}: sleep: invalid duration {args!r}")
             return True
         logging.debug(f"wait {to_sleep}s")
 
@@ -27,10 +27,10 @@ def handle_line(line: str, lineno: int):
     elif cmd in [">", "print"]: # keyboard text input
         try: args = json.loads(args)
         except json.JSONDecodeError:
-            logging.fatal("print: json error")
+            logging.fatal(f"ln {lineno}: print: json error")
             return True
         if type(args) != str:
-            logging.fatal("print: argument is not a json string")
+            logging.fatal(f"ln {lineno}: print: argument is not a json string")
             return True
         logging.debug(f"write {args!r}")
     elif cmd in [".", "key", "combo"]: # pressing key combinations
@@ -43,12 +43,12 @@ def handle_line(line: str, lineno: int):
     elif cmd in ["*", "times"]: # calling the same command multiple times
         try: to_repeat = args[args.index(" ")+1:]
         except ValueError:
-            logging.fatal(f"times: invalid syntax on line {lineno}")
+            logging.fatal(f"ln {lineno}: times: invalid syntax")
             return True
         repeats = args[:args.index(" ")]
         try: repeats = int(repeats)
         except ValueError:
-            logging.fatal(f"times: invalid count {repeats!r}")
+            logging.fatal(f"ln {lineno}: times: invalid count {repeats!r}")
             return True
         logging.debug(f"{repeats} times do {to_repeat!r}")
         

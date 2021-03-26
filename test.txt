@@ -9,6 +9,6 @@ title title 2
   # indented test
 * 2 > "a"
 fn test
-    # this is function test
+  # this is function test
 endfn
 call test
