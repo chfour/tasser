@@ -50,3 +50,7 @@ wait
 . ctrl+x
 . n
 > "exit\n"
+
+wait
+
+$ echo "this is a shell command" | lolcat

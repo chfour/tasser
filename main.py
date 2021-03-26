@@ -8,7 +8,7 @@ def parse_line(line: str) -> tuple:
     sp = line.split(" ")
     return sp[0], " ".join(sp[1:])
 
-def handle_line(line: str, lineno: int, functions: dict, run=True):
+def handle_line(line: str, lineno: int, functions: dict, run=True, enabled=["calls"]):
     # comment / empty line
     if line.startswith("//") or not line: return
     
@@ -36,23 +36,23 @@ def handle_line(line: str, lineno: int, functions: dict, run=True):
             return True
         logging.debug(f"write {args!r}")
 
-        if run: pyautogui.typewrite(args, interval=0.02)
+        if "calls" in enabled: pyautogui.typewrite(args, interval=0.02)
     
     elif cmd in [".", "key", "combo"]: # pressing key combinations
         keys = args.split("+")
         logging.debug(f"key combo {keys!r}")
 
-        if run: pyautogui.hotkey(*keys)
+        if "calls" in enabled: pyautogui.hotkey(*keys)
     
     elif cmd in ["kdown", "kdn", "hold"]: # holding down a key
         logging.debug(f"keydown {args!r}")
 
-        if run: pyautogui.keyDown(args)
+        if "calls" in enabled: pyautogui.keyDown(args)
     
     elif cmd in ["kup", "release"]: # releasing a key
         logging.debug(f"keyup {args!r}")
 
-        if run: pyautogui.keyUp(args)
+        if "calls" in enabled: pyautogui.keyUp(args)
     
     elif cmd in ["*", "times"]: # calling the same command multiple times
         try: to_repeat = args[args.index(" ")+1:]
@@ -67,7 +67,7 @@ def handle_line(line: str, lineno: int, functions: dict, run=True):
         logging.debug(f"{repeats} times do {to_repeat!r}")
         
         for _ in range(repeats):
-            if handle_line(to_repeat, lineno, functions, run): return True
+            if handle_line(to_repeat, lineno, functions, enabled): return True
     
     elif cmd in ["/", "call", "jump"]: # call a function
         func = functions.get(args, None)
@@ -78,13 +78,28 @@ def handle_line(line: str, lineno: int, functions: dict, run=True):
 
         for lineno, line in func:
             logging.debug(f"fncall {args!r}: ln {lineno}: {line!r}")
-            if handle_line(line, lineno, functions, run): return True
+            if handle_line(line, lineno, functions, enabled): return True
     
     elif cmd in ["<", "wait"]: # wait for user confirmation
         logging.info("Waiting for user interaction... Press [OK] to continue")
         
         pyautogui.alert("Press [OK] to continue")
         time.sleep(0.5)
+    
+    elif cmd in ["sh", "$", "shell"]: # running shell commands synchronously
+        if "shell" not in enabled:
+            logging.fatal(f"ln {lineno}: shell: not enabled. enable with --sh")
+            return True
+        
+        logging.debug(f"syncshell: {args}")
+    
+    elif cmd in ["ash", "%", "ashell", "asyncshell"]: # running shell commands asynchronously
+        if "shell" not in enabled:
+            logging.fatal(f"ln {lineno}: shell: not enabled. enable with --sh")
+            return True
+        
+        logging.debug(f"asyncshell: {args}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -96,8 +111,16 @@ if __name__ == "__main__":
                         help="time to wait between each input action, default=0.1")
     parser.add_argument("-d", "--dry-run", action="store_true",
                         help="'fake mode' - don't make calls to pyautogui")
+    parser.add_argument("--sh", action="store_true",
+                        help="enable running shell commands from script files")
     args = parser.parse_args()
     pyautogui.PAUSE = args.defaultdelay
+
+    enabled_features = []
+    if not args.dry_run: enabled_features.append("calls")
+    if args.sh:
+        logging.info("SHELL COMMANDS ENABLED.")
+        enabled_features.append("shell")
 
     logging.info(f"Waiting {args.wait_time} seconds...")
     logging.info(f"Opening file '{args.script}'")
@@ -133,6 +156,6 @@ if __name__ == "__main__":
                     logging.debug(f"begin new function {this_func!r}")
                     functions[this_func] = []
                 else:
-                    if handle_line(line, lineno, functions, not args.dry_run): break
+                    if handle_line(line, lineno, functions, enabled_features): break
         else:
             logging.info("End of file")
