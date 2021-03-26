@@ -1,5 +1,11 @@
+/*
 . alt+f2
 - 2
+*/
+
+. ctrl+alt+t
+- 2
+> "nano\n"
 
 // comment
 # title
@@ -8,7 +14,7 @@ kdown shift
 . a
 kup shift
 title title 2
-> "test test this is a test"
+> "test test this is a test\n"
 
   # indented test
 
@@ -17,17 +23,30 @@ title title 2
 fn test
   # this is function test
   // test aaaa
-  > "from a function"
+  > "from a function\n"
 endfn
 
 ( test2
   # this is function 2
   call test
 )
+
 # after defining functions
 
 call test
 call test2
 
-. ctrl+a
-. backspace
+function r
+  > "aaa\n"
+endfunction
+* 4 / r
+
+// . ctrl+a
+// . backspace
+// . esc
+
+wait
+
+. ctrl+x
+. n
+> "exit\n"

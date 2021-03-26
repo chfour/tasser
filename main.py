@@ -36,7 +36,7 @@ def handle_line(line: str, lineno: int, functions: dict, run=True):
             return True
         logging.debug(f"write {args!r}")
 
-        if run: pyautogui.typewrite(args, interval=0.05)
+        if run: pyautogui.typewrite(args, interval=0.02)
     
     elif cmd in [".", "key", "combo"]: # pressing key combinations
         keys = args.split("+")
@@ -69,7 +69,7 @@ def handle_line(line: str, lineno: int, functions: dict, run=True):
         for _ in range(repeats):
             if handle_line(to_repeat, lineno, functions, run): return True
     
-    elif cmd in ["/", "call", "jump"]:
+    elif cmd in ["/", "call", "jump"]: # call a function
         func = functions.get(args, None)
         if not func:
             logging.fatal(f"ln {lineno}: call: no such function {args!r}")
@@ -79,6 +79,12 @@ def handle_line(line: str, lineno: int, functions: dict, run=True):
         for lineno, line in func:
             logging.debug(f"fncall {args!r}: ln {lineno}: {line!r}")
             if handle_line(line, lineno, functions, run): return True
+    
+    elif cmd in ["<", "wait"]: # wait for user confirmation
+        logging.info("Waiting for user interaction... Press [OK] to continue")
+        
+        pyautogui.alert("Press [OK] to continue")
+        time.sleep(0.5)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -97,10 +103,19 @@ if __name__ == "__main__":
     logging.info(f"Opening file '{args.script}'")
     with open(args.script, "rt") as f:
         in_function = False
+        in_multiline_comment = False
         functions = {}
         for lineno, line in enumerate(f, 1):
             line = line.strip()
             logging.debug(f"ln {lineno}: {line!r}")
+
+            if line.startswith("*/"):
+                in_multiline_comment = False
+                continue
+            elif line.startswith("/*"):
+                in_multiline_comment = True
+            if in_multiline_comment: continue
+
             if in_function:
                 if line.startswith(("endfn", "endfunction", ")")):
                     in_function = False
