@@ -1,11 +1,13 @@
 #!/usr/bin/python3
 import argparse, logging, time, json
 
+logging.basicConfig(format="[%(asctime)s] %(levelname)s: %(message)s", level=logging.DEBUG)
+
 def parse_line(line: str) -> tuple:
     sp = line.split(" ")
     return sp[0], " ".join(sp[1:])
 
-def handle_line(line: str, lineno: int, functions: dict):
+def handle_line(line: str, lineno: int, functions: dict, dd=0):
     # comment / empty line
     if line.startswith("//") or not line: return
     
@@ -51,7 +53,8 @@ def handle_line(line: str, lineno: int, functions: dict):
         logging.debug(f"{repeats} times do {to_repeat!r}")
         
         for _ in range(repeats):
-            if handle_line(to_repeat, lineno, functions): return True
+            if handle_line(to_repeat, lineno, functions, dd): return True
+    
     elif cmd in ["/", "call", "jump"]:
         func = functions.get(args, None)
         if not func:
@@ -61,16 +64,19 @@ def handle_line(line: str, lineno: int, functions: dict):
 
         for lineno, line in func:
             logging.debug(f"fncall {args!r}: ln {lineno}: {line!r}")
-            if handle_line(line, lineno, functions): return True
+            if handle_line(line, lineno, functions, dd): return True
 
 if __name__ == "__main__":
-    logging.basicConfig(format="[%(asctime)s] %(levelname)s: %(message)s", level=logging.DEBUG)
-
     parser = argparse.ArgumentParser()
     parser.add_argument("script", type=str,
                         help="input script file")
+    parser.add_argument("-t", "--wait-time", type=int, default=5,
+                        help="time to wait before starting in seconds, default=5")
+    parser.add_argument("-d", "--defaultdelay", type=int, default=0,
+                        help="time to wait between lines in seconds")
     args = parser.parse_args()
-
+    DEFAULTDELAY = args.defaultdelay
+    logging.info(f"Waiting {DEFAULTDELAY} seconds...")
     logging.info(f"Opening file '{args.script}'")
     with open(args.script, "rt") as f:
         in_function = False
@@ -96,6 +102,6 @@ if __name__ == "__main__":
                     logging.debug(f"begin new function {this_func!r}")
                     functions[this_func] = []
                 else:
-                    if handle_line(line, lineno, functions): break
+                    if handle_line(line, lineno, functions, DEFAULTDELAY): break
         else:
             logging.info("End of file")
