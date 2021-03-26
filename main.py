@@ -36,7 +36,7 @@ def handle_line(line: str, lineno: int, functions: dict, run=True):
             return True
         logging.debug(f"write {args!r}")
 
-        if run: pyautogui.typewrite(args, interval=0.01)
+        if run: pyautogui.typewrite(args, interval=0.05)
     
     elif cmd in [".", "key", "combo"]: # pressing key combinations
         keys = args.split("+")
@@ -110,12 +110,11 @@ if __name__ == "__main__":
             else:
                 if line.startswith(("fn ", "function ", "( ")):
                     in_function = True
-                    _, args = parse_line(line)
-                    args = args.strip()
+                    _, this_func = parse_line(line)
+                    this_func = this_func.strip()
                     if not args:
                         logging.fatal(f"ln {lineno}: function: invalid syntax")
                         break
-                    this_func = args
                     logging.debug(f"begin new function {this_func!r}")
                     functions[this_func] = []
                 else:
