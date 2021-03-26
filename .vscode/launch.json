@@ -10,6 +10,14 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: test",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "args": ["test.txt"],
+            "console": "integratedTerminal"
         }
     ]
 }
