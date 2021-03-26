@@ -4,5 +4,11 @@ kdown shift
 - 1
 kup shift
 title title 2
-> test test this is a test
+> "test test this is a test"
 . shift+return
+  # indented test
+* 2 > "a"
+fn test
+    # this is function test
+endfn
+call test
