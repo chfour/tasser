@@ -5,9 +5,7 @@ def parse_line(line: str) -> tuple:
     sp = line.split(" ")
     return sp[0], " ".join(sp[1:])
 
-def handle_line(line: str, lineno: int):
-    line = line.strip() # lstrip for indents, rstrip for newline
-    logging.debug(f"ln {lineno}: {line!r}")
+def handle_line(line: str, lineno: int, functions: dict):
     # comment / empty line
     if line.startswith("//") or not line: return
     
@@ -53,7 +51,17 @@ def handle_line(line: str, lineno: int):
         logging.debug(f"{repeats} times do {to_repeat!r}")
         
         for _ in range(repeats):
-            if handle_line(to_repeat, lineno): return True
+            if handle_line(to_repeat, lineno, functions): return True
+    elif cmd in ["/", "call", "jump"]:
+        func = functions.get(args, None)
+        if not func:
+            logging.fatal(f"ln {lineno}: call: no such function {args!r}")
+            return
+        logging.debug(f"call function {args!r}, {len(func)} lines")
+
+        for lineno, line in func:
+            logging.debug(f"fncall {args!r}: ln {lineno}: {line!r}")
+            if handle_line(line, lineno, functions): return True
 
 if __name__ == "__main__":
     logging.basicConfig(format="[%(asctime)s] %(levelname)s: %(message)s", level=logging.DEBUG)
@@ -65,7 +73,29 @@ if __name__ == "__main__":
 
     logging.info(f"Opening file '{args.script}'")
     with open(args.script, "rt") as f:
-        for lineno, line in enumerate(f):
-            if handle_line(line, lineno + 1): break
+        in_function = False
+        functions = {}
+        for lineno, line in enumerate(f, 1):
+            line = line.strip()
+            logging.debug(f"ln {lineno}: {line!r}")
+            if in_function:
+                if line.startswith(("endfn", "endfunction", ")")):
+                    in_function = False
+                    logging.debug(f"end new function {this_func!r}")
+                else:
+                    functions[this_func].append((lineno, line))
+            else:
+                if line.startswith(("fn ", "function ", "( ")):
+                    in_function = True
+                    _, args = parse_line(line)
+                    args = args.strip()
+                    if not args:
+                        logging.fatal(f"ln {lineno}: function: invalid syntax")
+                        break
+                    this_func = args
+                    logging.debug(f"begin new function {this_func!r}")
+                    functions[this_func] = []
+                else:
+                    if handle_line(line, lineno, functions): break
         else:
             logging.info("End of file")

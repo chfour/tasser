@@ -6,9 +6,22 @@ kup shift
 title title 2
 > "test test this is a test"
 . shift+return
+
   # indented test
+
 * 2 > "a"
+
 fn test
   # this is function test
+  // test aaaa
+  > "from a function"
 endfn
+
+( test2
+  # this is function 2
+  call test
+)
+# after defining functions
+
 call test
+call test2
