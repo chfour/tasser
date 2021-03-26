@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import argparse, logging, time, json
+import pyautogui
 
 logging.basicConfig(format="[%(asctime)s] %(levelname)s: %(message)s", level=logging.DEBUG)
 
@@ -7,7 +8,7 @@ def parse_line(line: str) -> tuple:
     sp = line.split(" ")
     return sp[0], " ".join(sp[1:])
 
-def handle_line(line: str, lineno: int, functions: dict, dd=0):
+def handle_line(line: str, lineno: int, functions: dict):
     # comment / empty line
     if line.startswith("//") or not line: return
     
@@ -15,7 +16,7 @@ def handle_line(line: str, lineno: int, functions: dict, dd=0):
     cmd = cmd.lower()
 
     if cmd in ["title", "#"]: # title
-        logging.info("\x1B[1mTitle: " + args + "\x1B[0m")
+        logging.info("\x1B[1m" + args + "\x1B[0m")
     elif cmd in ["-", "sleep"]: # waiting
         try: to_sleep = float(args)
         except ValueError:
@@ -24,6 +25,7 @@ def handle_line(line: str, lineno: int, functions: dict, dd=0):
         logging.debug(f"wait {to_sleep}s")
 
         time.sleep(to_sleep)
+    
     elif cmd in [">", "print"]: # keyboard text input
         try: args = json.loads(args)
         except json.JSONDecodeError:
@@ -33,13 +35,25 @@ def handle_line(line: str, lineno: int, functions: dict, dd=0):
             logging.fatal(f"ln {lineno}: print: argument is not a json string")
             return True
         logging.debug(f"write {args!r}")
+
+        pyautogui.write(args)
+    
     elif cmd in [".", "key", "combo"]: # pressing key combinations
         keys = args.split("+")
         logging.debug(f"key combo {keys!r}")
+
+        pyautogui.hotkey(*keys)
+    
     elif cmd in ["kdown", "kdn", "hold"]: # holding down a key
         logging.debug(f"keydown {args!r}")
+
+        pyautogui.keyDown(args)
+    
     elif cmd in ["kup", "release"]: # releasing a key
         logging.debug(f"keyup {args!r}")
+
+        pyautogui.keyUp(args)
+    
     elif cmd in ["*", "times"]: # calling the same command multiple times
         try: to_repeat = args[args.index(" ")+1:]
         except ValueError:
@@ -53,7 +67,7 @@ def handle_line(line: str, lineno: int, functions: dict, dd=0):
         logging.debug(f"{repeats} times do {to_repeat!r}")
         
         for _ in range(repeats):
-            if handle_line(to_repeat, lineno, functions, dd): return True
+            if handle_line(to_repeat, lineno, functions): return True
     
     elif cmd in ["/", "call", "jump"]:
         func = functions.get(args, None)
@@ -64,19 +78,20 @@ def handle_line(line: str, lineno: int, functions: dict, dd=0):
 
         for lineno, line in func:
             logging.debug(f"fncall {args!r}: ln {lineno}: {line!r}")
-            if handle_line(line, lineno, functions, dd): return True
+            if handle_line(line, lineno, functions): return True
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("script", type=str,
                         help="input script file")
-    parser.add_argument("-t", "--wait-time", type=int, default=5,
+    parser.add_argument("-t", "--wait-time", type=float, default=5,
                         help="time to wait before starting in seconds, default=5")
-    parser.add_argument("-d", "--defaultdelay", type=int, default=0,
-                        help="time to wait between lines in seconds")
+    parser.add_argument("-d", "--defaultdelay", type=float, default=0.1,
+                        help="time to wait between each input action, default=0.1")
     args = parser.parse_args()
-    DEFAULTDELAY = args.defaultdelay
-    logging.info(f"Waiting {DEFAULTDELAY} seconds...")
+    pyautogui.PAUSE = args.defaultdelay
+
+    logging.info(f"Waiting {args.wait_time} seconds...")
     logging.info(f"Opening file '{args.script}'")
     with open(args.script, "rt") as f:
         in_function = False
@@ -102,6 +117,6 @@ if __name__ == "__main__":
                     logging.debug(f"begin new function {this_func!r}")
                     functions[this_func] = []
                 else:
-                    if handle_line(line, lineno, functions, DEFAULTDELAY): break
+                    if handle_line(line, lineno, functions): break
         else:
             logging.info("End of file")

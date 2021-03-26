@@ -1,11 +1,14 @@
+. alt+f2
+- 2
+
 // comment
 # title
 kdown shift
 - 0.1
+. a
 kup shift
 title title 2
 > "test test this is a test"
-. alt+f2
 
   # indented test
 
