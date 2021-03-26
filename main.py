@@ -8,7 +8,7 @@ def parse_line(line: str) -> tuple:
     sp = line.split(" ")
     return sp[0], " ".join(sp[1:])
 
-def handle_line(line: str, lineno: int, functions: dict):
+def handle_line(line: str, lineno: int, functions: dict, run=True):
     # comment / empty line
     if line.startswith("//") or not line: return
     
@@ -36,23 +36,23 @@ def handle_line(line: str, lineno: int, functions: dict):
             return True
         logging.debug(f"write {args!r}")
 
-        pyautogui.write(args)
+        if run: pyautogui.typewrite(args, interval=0.01)
     
     elif cmd in [".", "key", "combo"]: # pressing key combinations
         keys = args.split("+")
         logging.debug(f"key combo {keys!r}")
 
-        pyautogui.hotkey(*keys)
+        if run: pyautogui.hotkey(*keys)
     
     elif cmd in ["kdown", "kdn", "hold"]: # holding down a key
         logging.debug(f"keydown {args!r}")
 
-        pyautogui.keyDown(args)
+        if run: pyautogui.keyDown(args)
     
     elif cmd in ["kup", "release"]: # releasing a key
         logging.debug(f"keyup {args!r}")
 
-        pyautogui.keyUp(args)
+        if run: pyautogui.keyUp(args)
     
     elif cmd in ["*", "times"]: # calling the same command multiple times
         try: to_repeat = args[args.index(" ")+1:]
@@ -67,7 +67,7 @@ def handle_line(line: str, lineno: int, functions: dict):
         logging.debug(f"{repeats} times do {to_repeat!r}")
         
         for _ in range(repeats):
-            if handle_line(to_repeat, lineno, functions): return True
+            if handle_line(to_repeat, lineno, functions, run): return True
     
     elif cmd in ["/", "call", "jump"]:
         func = functions.get(args, None)
@@ -78,7 +78,7 @@ def handle_line(line: str, lineno: int, functions: dict):
 
         for lineno, line in func:
             logging.debug(f"fncall {args!r}: ln {lineno}: {line!r}")
-            if handle_line(line, lineno, functions): return True
+            if handle_line(line, lineno, functions, run): return True
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -86,8 +86,10 @@ if __name__ == "__main__":
                         help="input script file")
     parser.add_argument("-t", "--wait-time", type=float, default=5,
                         help="time to wait before starting in seconds, default=5")
-    parser.add_argument("-d", "--defaultdelay", type=float, default=0.1,
+    parser.add_argument("-w", "--defaultdelay", type=float, default=0.1,
                         help="time to wait between each input action, default=0.1")
+    parser.add_argument("-d", "--dry-run", action="store_true",
+                        help="'fake mode' - don't make calls to pyautogui")
     args = parser.parse_args()
     pyautogui.PAUSE = args.defaultdelay
 
@@ -117,6 +119,6 @@ if __name__ == "__main__":
                     logging.debug(f"begin new function {this_func!r}")
                     functions[this_func] = []
                 else:
-                    if handle_line(line, lineno, functions): break
+                    if handle_line(line, lineno, functions, not args.dry_run): break
         else:
             logging.info("End of file")
