@@ -127,6 +127,7 @@ if __name__ == "__main__":
         enabled_features.append("shell")
 
     logging.info(f"Waiting {args.wait_time} seconds...")
+    time.sleep(args.wait_time)
     logging.info(f"Opening file '{args.script}'")
     with open(args.script, "rt") as f:
         in_function = False
