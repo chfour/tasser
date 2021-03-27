@@ -136,7 +136,7 @@ if __name__ == "__main__":
             line = line.strip()
             logging.debug(f"ln {lineno}: {line!r}")
 
-            if line.startswith("*/"):
+            if line.endswith("*/"):
                 in_multiline_comment = False
                 continue
             elif line.startswith("/*"):

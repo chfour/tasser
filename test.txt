@@ -52,8 +52,7 @@ wait
 . n
 > "exit\n"
 
-wait
-*/
+wait*/
 
 $ echo "this is a shell command" | lolcat
 % sleep 1; echo "async"
