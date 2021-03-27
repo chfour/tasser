@@ -16,7 +16,7 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
-            "args": ["test.txt"],
+            "args": ["test.txt", "--sh"],
             "console": "integratedTerminal"
         }
     ]

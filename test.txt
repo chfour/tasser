@@ -3,6 +3,7 @@
 - 2
 */
 
+/*
 . ctrl+alt+t
 - 2
 > "nano\n"
@@ -52,5 +53,7 @@ wait
 > "exit\n"
 
 wait
+*/
 
 $ echo "this is a shell command" | lolcat
+% sleep 1; echo "async"

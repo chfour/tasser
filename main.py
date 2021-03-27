@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import argparse, logging, time, json
-import pyautogui
+import pyautogui, subprocess
 
 logging.basicConfig(format="[%(asctime)s] %(levelname)s: %(message)s", level=logging.DEBUG)
 
@@ -8,7 +8,7 @@ def parse_line(line: str) -> tuple:
     sp = line.split(" ")
     return sp[0], " ".join(sp[1:])
 
-def handle_line(line: str, lineno: int, functions: dict, run=True, enabled=["calls"]):
+def handle_line(line: str, lineno: int, functions: dict, enabled=["calls"]):
     # comment / empty line
     if line.startswith("//") or not line: return
     
@@ -88,17 +88,21 @@ def handle_line(line: str, lineno: int, functions: dict, run=True, enabled=["cal
     
     elif cmd in ["sh", "$", "shell"]: # running shell commands synchronously
         if "shell" not in enabled:
-            logging.fatal(f"ln {lineno}: shell: not enabled. enable with --sh")
+            logging.fatal(f"ln {lineno}: shell: not enabled")
             return True
         
         logging.debug(f"syncshell: {args}")
+
+        if "calls" in enabled: subprocess.call(args, shell=True)
     
     elif cmd in ["ash", "%", "ashell", "asyncshell"]: # running shell commands asynchronously
         if "shell" not in enabled:
-            logging.fatal(f"ln {lineno}: shell: not enabled. enable with --sh")
+            logging.fatal(f"ln {lineno}: shell: not enabled")
             return True
         
         logging.debug(f"asyncshell: {args}")
+        
+        if "calls" in enabled: subprocess.Popen(args, shell=True)
 
 
 if __name__ == "__main__":
